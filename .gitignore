@@ -1,0 +1,19 @@
+# Entornos virtuales
+venv/
+env/
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Base de datos local (¡NUNCA SUBIR A PRODUCCIÓN!)
+db.sqlite3
+
+# Variables de entorno secretas
+.env
+
+# Archivos de sistema de macOS
+.DS_Store
+
+# Archivos estáticos
+staticfiles/
