@@ -170,7 +170,10 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://fitmo-frontend-bx4e.vercel.app",
+    "https://fitmo-frontend-bx4e-hqb2rbztp-jamesgmz4ks-projects.vercel.app",
 ]
+
 
 FRONTEND_VERCEL_URL = os.environ.get('FRONTEND_URL')
 if FRONTEND_VERCEL_URL:
