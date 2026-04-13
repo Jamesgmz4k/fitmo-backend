@@ -14,15 +14,21 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+import stripe 
+
+# Carga las variables de entorno desde el archivo .env
 load_dotenv() 
+
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
 FITMO_PRO_MENSUAL_PRICE_ID = os.environ.get('FITMO_PRO_MENSUAL_PRICE_ID')
 FITMO_PRO_SEMESTRAL_PRICE_ID = os.environ.get('FITMO_PRO_SEMESTRAL_PRICE_ID')
 FITMO_PRO_ANUAL_PRICE_ID = os.environ.get('FITMO_PRO_ANUAL_PRICE_ID')
-FRONTEND_URL = 'http://localhost:3000'
-import stripe 
+
+# EL FIX MÁGICO: Lee de Render, si no hay nada, usa localhost
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
 stripe.api_key = STRIPE_SECRET_KEY
- # Carga las variables de entorno desde el archivo .env
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,12 +77,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
-
 ]
-
-
-
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -84,7 +85,6 @@ DATABASES = {
         conn_max_age=600
     )
 }
-
 
 ROOT_URLCONF = "core.urls"
 
@@ -108,9 +108,6 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -174,7 +171,6 @@ CORS_ALLOWED_ORIGINS = [
     "https://fitmo-frontend-bx4e-hqb2rbztp-jamesgmz4ks-projects.vercel.app",
 ]
 
-
-FRONTEND_VERCEL_URL = os.environ.get('FRONTEND_URL')
-if FRONTEND_VERCEL_URL:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_VERCEL_URL)
+# Agregamos dinámicamente la URL de tu frontend real a los permisos de CORS
+if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
