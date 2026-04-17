@@ -28,6 +28,7 @@ urlpatterns = [
     #GOOGLE LOGIN
     path('google-login/', views.google_login, name='google_login'),
     path('update-nutrition/', views.update_nutrition_profile),
+    path('nutrition/', views.get_nutrition_plan, name='get_nutrition_plan'),
     path('save-sleep/', views.save_sleep_log, name='save_sleep_log'),
     path('voice-workout/', views.process_voice_workout),
     path('templates/', views.handle_templates, name='handle_templates'),

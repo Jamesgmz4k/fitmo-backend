@@ -126,3 +126,20 @@ class TemplateExercise(models.Model):
 
     def __str__(self):
         return f"{self.exercise.name} en {self.template.name}"
+    
+class NutritionPlan(models.Model):
+    # Conectamos el plan directamente al usuario
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='nutrition_plan')
+    
+    # Macros
+    target_calories = models.IntegerField(null=True, blank=True)
+    target_protein = models.IntegerField(null=True, blank=True)
+    target_carbs = models.IntegerField(null=True, blank=True)
+    target_fat = models.IntegerField(null=True, blank=True)
+    
+    # Timestamps para saber cuándo se actualizó la dieta
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Plan de nutrición de {self.user.username}"

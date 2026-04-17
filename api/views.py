@@ -22,7 +22,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Workout, Exercise, Profile, WeightLog, SleepLog
+from .models import Workout, Exercise, Profile, WeightLog, SleepLog, NutritionPlan
 from .serializers import WorkoutSerializer, ExerciseSerializer, ProfileSerializer, WeightLogSerializer, WorkoutTemplateSerializer
 
 User = get_user_model()
@@ -396,6 +396,15 @@ def update_nutrition_profile(request):
         profile.target_fat = request.data.get('target_fat')
         
         profile.save()
+
+        # 2. 🚀 NUEVO: Guardamos los macros en el modelo NutritionPlan
+        # get_or_create es mágico: si no tiene plan, lo crea; si ya tiene, lo actualiza.
+        nutrition_plan, created = NutritionPlan.objects.get_or_create(user_id=user_id)
+        nutrition_plan.target_calories = request.data.get('target_calories')
+        nutrition_plan.target_protein = request.data.get('target_protein')
+        nutrition_plan.target_carbs = request.data.get('target_carbs')
+        nutrition_plan.target_fat = request.data.get('target_fat')
+        nutrition_plan.save()
         
         return Response({"message": "¡Dieta guardada con éxito en la base de datos!"}, status=status.HTTP_200_OK)
         
@@ -663,3 +672,30 @@ def template_detail(request, pk):
     elif request.method == 'DELETE':
         template.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_nutrition_plan(request):
+    user_id = request.query_params.get('user_id')
+    
+    if not user_id:
+        return Response({"error": "Falta el user_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Buscamos el plan que ya estás creando en update_nutrition_profile
+        plan = NutritionPlan.objects.get(user_id=user_id)
+        
+        if plan.target_calories:
+            return Response({
+                "id": plan.id,
+                "target_calories": plan.target_calories,
+                "target_protein": plan.target_protein,
+                "target_carbs": plan.target_carbs,
+                "target_fat": plan.target_fat
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({}, status=status.HTTP_200_OK)
+            
+    except NutritionPlan.DoesNotExist:
+        # Si el usuario es nuevo y no tiene plan, regresamos vacío para que Next.js muestre la tarjeta
+        return Response({}, status=status.HTTP_200_OK)
