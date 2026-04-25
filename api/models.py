@@ -19,11 +19,12 @@ class Exercise(models.Model):
 # --- TU MODELO ACTUALIZADO ---
 class Workout(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # Relacionamos el entrenamiento con un ejercicio del catálogo
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, null=True) 
     title = models.CharField(max_length=255) 
-    weight = models.FloatField(default=0) # Para que guardes tus kilos
-    reps = models.CharField(max_length=100, default="0") # Cambiado de IntegerField a CharField
+    weight = models.FloatField(default=0) 
+    # 👇 AGREGAMOS ESTA LÍNEA 👇
+    unit = models.CharField(max_length=3, choices=[('kg', 'kg'), ('lbs', 'lbs')], default='kg')
+    reps = models.CharField(max_length=100, default="0") 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

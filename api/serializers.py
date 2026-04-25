@@ -16,7 +16,7 @@ class WorkoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workout
         # Añadimos los nuevos campos que pusimos en el modelo
-        fields = ['id', 'user', 'exercise', 'exercise_name', 'title', 'weight', 'reps', 'created_at']
+        fields = ['id', 'user', 'exercise', 'exercise_name', 'title', 'weight', 'unit', 'reps', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
 
 class ProfileSerializer(serializers.ModelSerializer):
