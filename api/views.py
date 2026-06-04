@@ -1,6 +1,7 @@
 import stripe
 from django.conf import settings
 from django.db import IntegrityError
+from django.db import transaction
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
@@ -368,6 +369,7 @@ def google_login(request):
         return Response({
             'id': user.id,
             'access': str(refresh.access_token),
+            'refresh': str(refresh),
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -560,7 +562,6 @@ def process_voice_workout(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-# --- 1. CRUD DE TEMPLATES ---
 @api_view(['GET', 'POST'])
 def handle_templates(request):
     user_id = request.query_params.get('user_id') or request.data.get('user_id')
@@ -569,29 +570,47 @@ def handle_templates(request):
         templates = WorkoutTemplate.objects.filter(user_id=user_id)
         serializer = WorkoutTemplateSerializer(templates, many=True)
         return Response(serializer.data)
+
     elif request.method == 'POST':
         name = request.data.get('name')
         exercises_data = request.data.get('exercises', []) 
 
-        template = WorkoutTemplate.objects.create(user_id=user_id, name=name)
+        if not name or not exercises_data:
+            return Response({"error": "La rutina debe tener un nombre y al menos un ejercicio."}, status=status.HTTP_400_BAD_REQUEST)
 
-        for idx, ex_data in enumerate(exercises_data):
-            # MAGIA: Buscamos el ejercicio, si no existe, lo creamos al vuelo.
-            exercise_obj, created = Exercise.objects.get_or_create(
-                user_id=user_id,
-                name=ex_data['name'],
-                defaults={'category': ex_data['category']}
-            )
-            
-            TemplateExercise.objects.create(
-                template=template,
-                exercise=exercise_obj,
-                target_sets=ex_data.get('target_sets', 3),
-                target_reps=ex_data.get('target_reps', "10"),
-                rest_time=ex_data.get('rest_time', 90), # <--- AGREGAR ESTO
-                order=idx
-            )
-        return Response({"message": "Template creado con éxito"}, status=status.HTTP_201_CREATED)
+        try:
+            # 🚀 MAGIA DE INGENIERÍA: Transacción Atómica
+            with transaction.atomic():
+                template = WorkoutTemplate.objects.create(user_id=user_id, name=name)
+
+                for idx, ex_data in enumerate(exercises_data):
+                    # Manejo defensivo: Si el frontend olvida mandar la categoría, usamos 'General'
+                    category = ex_data.get('category', 'General')
+                    ex_name = ex_data.get('name')
+
+                    if not ex_name:
+                        raise ValueError(f"El ejercicio en la posición {idx + 1} no tiene nombre.")
+
+                    exercise_obj, created = Exercise.objects.get_or_create(
+                        user_id=user_id,
+                        name=ex_name,
+                        defaults={'category': category}
+                    )
+                    
+                    TemplateExercise.objects.create(
+                        template=template,
+                        exercise=exercise_obj,
+                        target_sets=ex_data.get('target_sets', 3),
+                        target_reps=ex_data.get('target_reps', "10"),
+                        rest_time=ex_data.get('rest_time', 90),
+                        order=idx
+                    )
+            return Response({"message": "Template creado con éxito"}, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            # Si ALGO falla, la BD se revierte y evitamos los guardados a medias
+            print(f"🔴 Error al guardar rutina: {str(e)}")
+            return Response({"error": f"Error interno: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
    
